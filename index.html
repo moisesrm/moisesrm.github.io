@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Compras">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Lista de Compras</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>🛒 Compras</h1>
+                <button class="sidebar-close" id="sidebarClose" aria-label="Fechar menu">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <p class="sidebar-section-label">Status</p>
+                <div class="progress-section">
+                    <div class="progress-info">
+                        <span class="progress-text" id="progressText">0 de 0 itens</span>
+                        <span class="progress-percent" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
+                </div>
+                <div class="filter-list">
+                    <button class="filter-btn active" data-filter="all">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                        <span>Todos</span>
+                        <span class="count-badge" id="countAll">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="pending">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="9"/>
+                            <polyline points="12 7 12 12 16 14"/>
+                        </svg>
+                        <span>Pendentes</span>
+                        <span class="count-badge" id="countPending">0</span>
+                    </button>
+                    <button class="filter-btn" data-filter="completed">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <span>Comprados</span>
+                        <span class="count-badge" id="countCompleted">0</span>
+                    </button>
+                </div>
+            </nav>
+
+            <nav class="sidebar-nav">
+                <div class="nav-header">
+                    <p class="sidebar-section-label">Categorias</p>
+                    <button class="btn-add-category" id="addCategoryBtn" aria-label="Nova categoria">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="category-list" id="categoryList">
+                    <button class="category-btn active" data-category="all">Todas</button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-icon clear" id="clearCompleted" aria-label="Limpar comprados" title="Limpar comprados">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                </button>
+                <button class="btn-icon theme" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">
+                    <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                    <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <button class="btn-icon share" id="shareBtn" aria-label="Exportar lista" title="Exportar lista">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                        <polyline points="16 6 12 2 8 6"/>
+                        <line x1="12" y1="2" x2="12" y2="15"/>
+                    </svg>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="content-wrapper">
+                <div class="mobile-bar">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir menu">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <span class="app-title">Lista de Compras</span>
+                    <span id="itemCount" class="mobile-count">0 itens</span>
+                </div>
+
+                <div class="search-bar" id="searchBar">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Buscar item..." inputmode="text" autocapitalize="off" autocomplete="off">
+                    <button class="search-clear" id="searchClear" aria-label="Limpar busca" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mobile-filters" id="mobileFilters">
+                    <div class="filter-chips">
+                        <button class="filter-chip active" data-filter="all">Todos</button>
+                        <button class="filter-chip" data-filter="pending">Pendentes</button>
+                        <button class="filter-chip" data-filter="completed">Comprados</button>
+                    </div>
+                    <div class="category-select-wrapper">
+                        <select id="mobileCategorySelect" class="mobile-category-select">
+                            <option value="all">Categorias</option>
+                        </select>
+                    </div>
+                </div>
+
+                <ul class="item-list" id="itemList"></ul>
+
+                <div class="list-footer" id="listFooter">
+                    <span class="footer-total-label">Total estimado:</span>
+                    <span class="footer-total-value" id="totalPrice">R$ 0,00</span>
+                </div>
+
+                <div class="empty-state" id="emptyState">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                        <rect x="9" y="3" width="6" height="4" rx="1"/>
+                        <path d="M9 14l2 2 4-4"/>
+                    </svg>
+                    <p>Lista vazia</p>
+                    <span class="empty-hint">Clique no + para adicionar itens</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="edge-swipe-area" id="edgeSwipeArea"></div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="fab-container">
+        <button class="fab" id="fabBtn" aria-label="Adicionar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </button>
+        <div class="fab-menu" id="fabMenu">
+            <button class="fab-menu-item" id="fabAddItem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Novo item</span>
+            </button>
+            <button class="fab-menu-item" id="fabAddCategory">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                <span>Nova categoria</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Novo item</h2>
+                <button class="modal-close" id="modalClose" aria-label="Fechar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form class="modal-form" id="modalForm">
+                <div class="form-group">
+                    <label for="modalItemName">Nome do item</label>
+                    <input type="text" id="modalItemName" class="input" placeholder="Ex: Arroz, Leite, Sabão..." autocomplete="off" required inputmode="text" autocapitalize="words">
+                </div>
+                <div class="form-group">
+                    <label for="modalCategory">Categoria</label>
+                    <select id="modalCategory" class="select"></select>
+                </div>
+                <div class="form-group">
+                    <label for="modalQuantity">Quantidade</label>
+                    <input type="number" id="modalQuantity" class="input quantity-input" min="1" value="1" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="modalPrice">Preço (R$)</label>
+                    <input type="number" id="modalPrice" class="input price-input" min="0" step="0.01" placeholder="0,00" inputmode="decimal" autocomplete="off">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="modalCancel">Cancelar</button>
+                    <button type="submit" id="modalSubmit" class="btn btn-primary">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="shareModalOverlay">
+        <div class="modal" id="shareModal">
+            <div class="modal-header">
+                <h2>Compartilhar lista</h2>
+                <button class="modal-close" id="shareModalClose" aria-label="Fechar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="share-options">
+                <button class="share-option" id="shareCopyText">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    <div class="share-option-text">
+                        <span class="share-option-title">Copiar texto</span>
+                        <span class="share-option-desc">Lista formatada para colar em qualquer lugar</span>
+                    </div>
+                </button>
+                <button class="share-option" id="shareDownloadJson">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <div class="share-option-text">
+                        <span class="share-option-title">Baixar JSON</span>
+                        <span class="share-option-desc">Arquivo com toda a lista e categorias</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="categoryModalOverlay">
+        <div class="modal" id="categoryModal">
+            <div class="modal-header">
+                <h2 id="categoryModalTitle">Nova categoria</h2>
+                <button class="modal-close" id="categoryModalClose" aria-label="Fechar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form class="modal-form" id="categoryModalForm">
+                <input type="hidden" id="editingCategoryId">
+                <div class="form-group">
+                    <label for="categoryName">Nome da categoria</label>
+                    <input type="text" id="categoryName" class="input" placeholder="Ex: Padaria, Limpeza..." required inputmode="text" autocapitalize="words" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="categoryColor">Cor</label>
+                    <div class="color-picker">
+                        <input type="color" id="categoryColor" value="#2563eb">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="categoryModalCancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="categoryModalSubmit">Criar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
