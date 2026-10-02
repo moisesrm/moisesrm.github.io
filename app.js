@@ -1052,12 +1052,17 @@ function showNotificationWithFallback(title, options) {
     }
 }
 
+// Ícone das notificações: precisa ser PNG com fundo TRANSPARENTE. O Android
+// recorta pela máscara alpha e repinta de branco, então um ícone com fundo
+// opaco (como o icon-192.png, que é o app icon) vira um quadrado branco.
+const NOTIFICATION_ICON = 'icon-notification.png';
+
 function showReminderNotification(reminder) {
     showNotificationWithFallback(reminder.name, {
         body: reminder.description || `Lembrete ${formatReminderWhen(reminder)}`,
         tag: `lembrete-${reminder.id}`,
-        icon: 'icon-192.png',
-        badge: 'icon-192.png',
+        icon: NOTIFICATION_ICON,
+        badge: NOTIFICATION_ICON,
         data: { reminderId: reminder.id }
     });
 }
@@ -1066,8 +1071,8 @@ function showReminderAdvanceNotification(reminder) {
     showNotificationWithFallback(`${reminder.name} - em ${REMINDER_ADVANCE_DAYS} dias`, {
         body: reminder.description || `Lembrete ${formatReminderWhen(reminder)}`,
         tag: `lembrete-adv-${reminder.id}`,
-        icon: 'icon-192.png',
-        badge: 'icon-192.png',
+        icon: NOTIFICATION_ICON,
+        badge: NOTIFICATION_ICON,
         data: { reminderId: reminder.id }
     });
 }

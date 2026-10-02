@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lista-compras-v2';
+const CACHE_NAME = 'lista-compras-v3';
 const ASSETS = [
     '/',
     'index.html',
@@ -8,7 +8,8 @@ const ASSETS = [
     'icon-192.png',
     'icon-512.png',
     'favicon.svg',
-    'favicon.ico'
+    'favicon.ico',
+    'icon-notification.png'
 ];
 
 self.addEventListener('install', (e) => {
