@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lista-compras-v4';
+const CACHE_NAME = 'lista-compras-v2';
 const ASSETS = [
     '/',
     'index.html',
@@ -6,7 +6,9 @@ const ASSETS = [
     'app.js',
     'manifest.json',
     'icon-192.png',
-    'icon-512.png'
+    'icon-512.png',
+    'favicon.svg',
+    'favicon.ico'
 ];
 
 self.addEventListener('install', (e) => {
@@ -44,4 +46,25 @@ self.addEventListener('message', (e) => {
     if (e.data && e.data.action === 'skipWaiting') {
         self.skipWaiting();
     }
+});
+
+self.addEventListener('notificationclick', (e) => {
+    e.notification.close();
+
+    const reminderId = e.notification.data ? e.notification.data.reminderId : null;
+
+    e.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            const existing = windowClients[0];
+
+            if (existing) {
+                return existing.focus().then(() => {
+                    return existing.postMessage({ type: 'notification-click', reminderId: reminderId });
+                });
+            }
+
+            const target = reminderId ? `/?lembrete=${encodeURIComponent(reminderId)}` : '/';
+            return self.clients.openWindow(target);
+        })
+    );
 });

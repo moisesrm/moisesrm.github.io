@@ -100,6 +100,106 @@ body {
     color: var(--gray-800);
 }
 
+/* ===================== SPLASH ===================== */
+
+/* Cobre o intervalo entre o HTML pintar e o app.js montar a tela.
+   some com .is-done (JS) ou sozinho pela animacao de segurada, para nunca
+   travar o app se o script falhar. */
+
+.app-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e0e7ff 0%, #f0f9ff 50%, #e0e7ff 100%);
+    animation: splashHold 3s forwards;
+}
+
+[data-theme="dark"] .app-splash {
+    background: linear-gradient(135deg, #111827 0%, #0f172a 50%, #111827 100%);
+}
+
+.app-splash.is-done {
+    animation: splashFadeOut 0.35s ease forwards;
+    pointer-events: none;
+}
+
+.app-splash-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.app-splash-logo {
+    width: 96px;
+    height: 96px;
+    border-radius: 24px;
+    box-shadow: var(--shadow-md);
+    animation: splashPulse 1.6s ease-in-out infinite;
+}
+
+.app-splash-name {
+    color: var(--gray-800);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+[data-theme="dark"] .app-splash-name {
+    color: var(--gray-200);
+}
+
+.app-splash-bar {
+    width: 120px;
+    height: 3px;
+    overflow: hidden;
+    background: var(--gray-200);
+    border-radius: 999px;
+}
+
+[data-theme="dark"] .app-splash-bar {
+    background: var(--gray-700);
+}
+
+.app-splash-bar span {
+    display: block;
+    width: 40%;
+    height: 100%;
+    background: var(--primary);
+    border-radius: 999px;
+    animation: splashSlide 1.1s ease-in-out infinite;
+}
+
+@keyframes splashPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+}
+
+@keyframes splashSlide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+}
+
+@keyframes splashFadeOut {
+    to { opacity: 0; visibility: hidden; }
+}
+
+/* Rede de segurada: se o JS nunca rodar, some sozinho. */
+@keyframes splashHold {
+    0%, 92% { opacity: 1; visibility: visible; }
+    100% { opacity: 0; visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-splash-logo,
+    .app-splash-bar span {
+        animation: none;
+    }
+}
+
 /* ===================== LAYOUT ===================== */
 
 .app-layout {
@@ -115,16 +215,16 @@ body {
 
 .sidebar {
     display: none;
-    width: 280px;
+    width: 340px;
     background: white;
     border-right: 1px solid var(--gray-200);
-    flex-direction: column;
+    flex-direction: row;
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
     z-index: 300;
-    overflow-y: auto;
+    overflow: hidden;
     box-shadow: var(--shadow-xl);
     transition: background 0.3s ease, border-color 0.3s ease;
     touch-action: pan-y;
@@ -133,6 +233,602 @@ body {
 [data-theme="dark"] .sidebar {
     background: var(--bg-primary);
     border-right-color: var(--border-color);
+}
+
+/* ===================== SIDEBAR RAIL (coluna de abas) ===================== */
+
+.sidebar-rail {
+    display: flex;
+    flex-direction: column;
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+    padding: 12px 8px;
+    gap: 8px;
+    background: var(--gray-50);
+    border-right: 1px solid var(--gray-200);
+    overflow-y: auto;
+}
+
+[data-theme="dark"] .sidebar-rail {
+    background: var(--bg-primary-alt);
+    border-right-color: var(--border-color);
+}
+
+.rail-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rail-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 68px;
+    padding: 10px 6px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--gray-500);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.rail-tab svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    flex-shrink: 0;
+}
+
+.rail-tab-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    word-break: break-word;
+}
+
+.rail-tab:hover {
+    background: var(--gray-100);
+    color: var(--gray-800);
+}
+
+[data-theme="dark"] .rail-tab {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .rail-tab:hover {
+    background: #374151;
+    color: #f9fafb;
+}
+
+.rail-tab.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+[data-theme="dark"] .rail-tab.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ===================== SIDEBAR CONTENT (coluna contextual) ===================== */
+
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+}
+
+.sidebar-panels {
+    flex: 1 0 auto;
+}
+
+.sidebar-panel {
+    display: none;
+}
+
+.sidebar-panel.active {
+    display: block;
+}
+
+.panel-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 32px 16px;
+    color: var(--gray-400);
+    text-align: center;
+}
+
+.panel-placeholder p {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-600);
+}
+
+[data-theme="dark"] .panel-placeholder p {
+    color: var(--text-secondary);
+}
+
+/* ===================== VIEWS (compras | lembretes) ===================== */
+
+.view {
+    display: none;
+}
+
+.view.active {
+    display: block;
+}
+
+/* ===================== LEMBRETES ===================== */
+
+.notif-prompt {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-md);
+}
+
+.notif-prompt[hidden] {
+    display: none;
+}
+
+.notif-prompt-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    color: var(--primary);
+    background: white;
+    border-radius: 50%;
+}
+
+.notif-prompt-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-prompt-text strong {
+    font-size: 0.86rem;
+    color: var(--gray-900);
+}
+
+.notif-prompt-text span {
+    font-size: 0.76rem;
+    color: var(--gray-500);
+}
+
+.notif-prompt-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.notif-prompt-actions .btn {
+    padding: 7px 12px;
+    font-size: 0.8rem;
+}
+
+[data-theme="dark"] .notif-prompt {
+    background: rgba(37, 99, 235, 0.12);
+    border-color: rgba(37, 99, 235, 0.35);
+}
+
+[data-theme="dark"] .notif-prompt-icon {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .notif-prompt-text strong {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .notif-prompt-text span {
+    color: var(--text-muted);
+}
+
+@media (max-width: 479px) {
+    .notif-prompt {
+        flex-wrap: wrap;
+    }
+
+    .notif-prompt-actions {
+        width: 100%;
+    }
+
+    .notif-prompt-actions .btn {
+        flex: 1;
+    }
+}
+
+.reminder-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.reminder-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-left: 4px solid var(--dot-color, var(--primary));
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    animation: slideIn 0.25s ease;
+}
+
+.reminder-card.flash {
+    animation: reminderFlash 2s ease;
+}
+
+@keyframes reminderFlash {
+    0%, 100% {
+        box-shadow: var(--shadow-sm);
+        border-left-color: var(--dot-color, var(--primary));
+    }
+    15%, 55% {
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.45);
+        border-left-color: #2563eb;
+    }
+}
+
+[data-theme="dark"] .reminder-card {
+    background: var(--bg-card);
+    border-top-color: var(--border-color);
+    border-right-color: var(--border-color);
+    border-bottom-color: var(--border-color);
+}
+
+/* ---- DOT COLORS (fonte unica) ----
+   O JS so adiciona a classe dot-<estado>; a cor vem daqui. Assim o ponto do
+   menu e a borda dos cards nunca divergem, e o dark mode vale para os dois
+   sem precisar de re-render. */
+
+.dot-fora,
+.dot-sem_horario {
+    --dot-color: #d1d5db;
+}
+
+.dot-mais_tarde {
+    --dot-color: #9ca3af;
+}
+
+.dot-proxima_hora {
+    --dot-color: #2563eb;
+}
+
+.dot-passou {
+    --dot-color: #fbbf24;
+}
+
+[data-theme="dark"] .dot-fora,
+[data-theme="dark"] .dot-sem_horario {
+    --dot-color: #4b5563;
+}
+
+[data-theme="dark"] .dot-mais_tarde {
+    --dot-color: #6b7280;
+}
+
+[data-theme="dark"] .dot-proxima_hora {
+    --dot-color: #60a5fa;
+}
+
+[data-theme="dark"] .dot-passou {
+    --dot-color: #fbbf24;
+}
+
+.cat-dot {
+    background: var(--dot-color, transparent);
+}
+
+/* ---- Status do lembrete (pendente | notificado | atrasado | concluido) ---- */
+
+.reminder-card.concluido {
+    opacity: 0.65;
+}
+
+.reminder-tag.status.atrasado {
+    background: rgba(245, 158, 11, 0.15);
+    color: #b45309;
+}
+
+.reminder-tag.status.notificado {
+    background: rgba(34, 197, 94, 0.15);
+    color: #15803d;
+}
+
+.reminder-tag.status.concluido {
+    background: var(--gray-100);
+    color: var(--gray-500);
+}
+
+[data-theme="dark"] .reminder-tag.status.atrasado {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+}
+
+[data-theme="dark"] .reminder-tag.status.notificado {
+    background: rgba(34, 197, 94, 0.18);
+    color: #4ade80;
+}
+
+[data-theme="dark"] .reminder-tag.status.concluido {
+    background: var(--bg-input);
+    color: var(--text-secondary);
+}
+
+/* ---- Animacao de saida ---- */
+
+@keyframes reminderSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+        max-height: 220px;
+        margin-bottom: 0;
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-24px) scale(0.97);
+        max-height: 0;
+        margin-bottom: -12px;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+}
+
+.reminder-card.removing {
+    overflow: hidden;
+    pointer-events: none;
+    animation: reminderSlideOut 0.22s ease forwards;
+}
+
+/* ---- Responsivo ---- */
+
+@media (max-width: 479px) {
+    .reminder-card {
+        padding: 13px;
+        gap: 10px;
+    }
+
+    .reminder-card-meta {
+        gap: 6px;
+        margin-bottom: 4px;
+    }
+
+    .reminder-card-name {
+        font-size: 0.9rem;
+    }
+
+    .reminder-card-desc {
+        font-size: 0.78rem;
+    }
+
+    .reminder-edit,
+    .reminder-delete {
+        width: 30px;
+        height: 30px;
+    }
+
+    .reminder-edit svg,
+    .reminder-delete svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+@media (max-width: 359px) {
+    .reminder-card {
+        flex-wrap: wrap;
+    }
+
+    .reminder-card-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+.reminder-card-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.reminder-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+[data-theme="dark"] .reminder-card-name {
+    color: var(--text-heading);
+}
+
+.reminder-card-desc {
+    font-size: 0.82rem;
+    color: var(--gray-500);
+    word-break: break-word;
+}
+
+[data-theme="dark"] .reminder-card-desc {
+    color: var(--text-secondary);
+}
+
+.reminder-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.reminder-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--gray-100);
+    color: var(--gray-600);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .reminder-tag {
+    background: var(--bg-input);
+    color: var(--text-secondary);
+}
+
+.reminder-tag.type {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+}
+
+[data-theme="dark"] .reminder-tag.type {
+    background: rgba(96, 165, 250, 0.15);
+    color: #60a5fa;
+}
+
+.reminder-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.reminder-edit,
+.reminder-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.reminder-edit svg,
+.reminder-delete svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
+.reminder-edit {
+    color: var(--gray-500);
+}
+
+.reminder-edit:hover {
+    background: var(--gray-100);
+    color: var(--gray-800);
+}
+
+[data-theme="dark"] .reminder-edit {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .reminder-edit:hover {
+    background: #374151;
+    color: #f9fafb;
+}
+
+.reminder-delete {
+    color: var(--danger);
+}
+
+.reminder-delete:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+}
+
+[data-theme="dark"] .reminder-delete {
+    color: #f87171;
+}
+
+[data-theme="dark"] .reminder-delete:hover {
+    background: rgba(248, 113, 113, 0.1);
+    color: #f87171;
+}
+
+/* Lista de lembretes dentro do menu (mesma base das categorias) */
+.reminder-mini-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.reminder-stats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+    margin-bottom: 6px;
+    color: var(--gray-400);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.reminder-stats[hidden] {
+    display: none;
+}
+
+.reminder-stats-sep {
+    opacity: 0.5;
+}
+
+[data-theme="dark"] .reminder-stats {
+    color: var(--text-muted);
+}
+
+.reminder-mini-group {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 8px 3px;
+}
+
+.reminder-mini-group:first-child {
+    padding-top: 0;
+}
+
+[data-theme="dark"] .reminder-mini-group {
+    color: var(--text-muted);
 }
 
 @media (min-width: 480px) {
@@ -402,6 +1098,78 @@ body {
 
 .btn-add-category:hover {
     background: var(--primary-dark);
+}
+
+.nav-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notif-toggle {
+    position: relative;
+    background: var(--gray-200);
+    color: var(--gray-500);
+}
+
+.notif-toggle:hover {
+    background: var(--gray-300);
+    color: var(--gray-700);
+}
+
+.notif-toggle.active {
+    background: var(--success);
+    color: white;
+}
+
+.notif-toggle.active:hover {
+    background: var(--success);
+    color: white;
+}
+
+.notif-toggle.blocked {
+    background: var(--gray-300);
+    color: var(--gray-600);
+}
+
+.notif-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 8px;
+    height: 8px;
+    background: var(--danger);
+    border: 2px solid white;
+    border-radius: 50%;
+    display: none;
+}
+
+.notif-toggle.needs-attention .notif-dot {
+    display: block;
+}
+
+[data-theme="dark"] .notif-toggle {
+    background: var(--border-color);
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .notif-toggle:hover {
+    background: #4b5563;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .notif-toggle.active {
+    background: var(--success);
+    color: white;
+}
+
+[data-theme="dark"] .notif-toggle.blocked {
+    background: #4b5563;
+    color: var(--gray-500);
+}
+
+[data-theme="dark"] .notif-dot {
+    border-color: #1f2937;
 }
 
 .filter-list {
@@ -1670,6 +2438,82 @@ mark {
     gap: 6px;
 }
 
+.form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.form-row .form-group {
+    flex: 1;
+    min-width: 0;
+}
+
+textarea.input {
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
+    line-height: 1.4;
+}
+
+.form-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 2px;
+    color: var(--gray-400);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.form-divider::before,
+.form-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gray-200);
+}
+
+[data-theme="dark"] .form-divider {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .form-divider::before,
+[data-theme="dark"] .form-divider::after {
+    background: var(--border-color);
+}
+
+.form-hint {
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--gray-400);
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.88rem;
+    color: var(--gray-900);
+    cursor: pointer;
+}
+
+.form-checkbox input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+[data-theme="dark"] .form-hint {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .form-checkbox {
+    color: var(--text-primary);
+}
+
 .form-group label {
     font-size: 0.85rem;
     font-weight: 600;
@@ -1914,7 +2758,12 @@ mark {
     .sidebar {
         transform: translateX(-100%);
         transition: transform 0.3s ease;
-        width: 280px;
+        width: 100%;
+        max-width: 100vw;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
     }
 
     .sidebar.open {
@@ -2026,7 +2875,7 @@ mark {
 
 @media (min-width: 480px) and (max-width: 767px) {
     .sidebar {
-        width: 260px;
+        width: 320px;
     }
 
     .content-wrapper {
@@ -2046,7 +2895,7 @@ mark {
 
 @media (min-width: 768px) and (max-width: 1023px) {
     .sidebar {
-        width: 280px;
+        width: 340px;
     }
 
     .content-wrapper {
@@ -2066,7 +2915,7 @@ mark {
 
 @media (min-width: 1024px) and (max-width: 1439px) {
     .sidebar {
-        width: 300px;
+        width: 360px;
         position: sticky;
         top: 0;
     }
@@ -2182,7 +3031,7 @@ mark {
 
 @media (min-width: 1440px) {
     .sidebar {
-        width: 320px;
+        width: 380px;
         position: sticky;
         top: 0;
     }

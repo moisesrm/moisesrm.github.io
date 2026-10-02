@@ -9,110 +9,178 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Compras">
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" sizes="32x32">
     <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
     <link rel="apple-touch-icon" href="icon-192.png">
     <title>Lista de Compras</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="app-splash" id="appSplash" aria-hidden="true">
+        <div class="app-splash-inner">
+            <img class="app-splash-logo" src="favicon.svg" alt="" width="96" height="96">
+            <span class="app-splash-name">Lista de Compras</span>
+            <div class="app-splash-bar"><span></span></div>
+        </div>
+    </div>
     <div class="app-layout">
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h1>🛒 Compras</h1>
-                <button class="sidebar-close" id="sidebarClose" aria-label="Fechar menu">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <nav class="sidebar-nav">
-                <p class="sidebar-section-label">Status</p>
-                <div class="progress-section">
-                    <div class="progress-info">
-                        <span class="progress-text" id="progressText">0 de 0 itens</span>
-                        <span class="progress-percent" id="progressPercent">0%</span>
-                    </div>
-                    <div class="progress-bar-track">
-                        <div class="progress-bar-fill" id="progressBarFill"></div>
-                    </div>
-                </div>
-                <div class="filter-list">
-                    <button class="filter-btn active" data-filter="all">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                            <rect x="3" y="3" width="7" height="7" rx="1"/>
-                            <rect x="14" y="3" width="7" height="7" rx="1"/>
-                            <rect x="3" y="14" width="7" height="7" rx="1"/>
-                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+            <nav class="sidebar-rail" aria-label="Seções do app">
+                <div class="rail-tabs">
+                    <button class="rail-tab active" data-tab="compras" aria-label="Compras" aria-current="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="21" r="1"/>
+                            <circle cx="20" cy="21" r="1"/>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61l1.38-9H6"/>
                         </svg>
-                        <span>Todos</span>
-                        <span class="count-badge" id="countAll">0</span>
+                        <span class="rail-tab-label">Compras</span>
                     </button>
-                    <button class="filter-btn" data-filter="pending">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                            <circle cx="12" cy="12" r="9"/>
-                            <polyline points="12 7 12 12 16 14"/>
+                    <button class="rail-tab" data-tab="lembretes" aria-label="Lembretes">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                         </svg>
-                        <span>Pendentes</span>
-                        <span class="count-badge" id="countPending">0</span>
-                    </button>
-                    <button class="filter-btn" data-filter="completed">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
-                        <span>Comprados</span>
-                        <span class="count-badge" id="countCompleted">0</span>
+                        <span class="rail-tab-label">Lembretes</span>
                     </button>
                 </div>
             </nav>
 
-            <nav class="sidebar-nav">
-                <div class="nav-header">
-                    <p class="sidebar-section-label">Categorias</p>
-                    <button class="btn-add-category" id="addCategoryBtn" aria-label="Nova categoria">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <div class="sidebar-content">
+                <div class="sidebar-header">
+                    <h1 id="sidebarTitle">Compras</h1>
+                    <button class="sidebar-close" id="sidebarClose" aria-label="Fechar menu">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
                     </button>
                 </div>
-                <div class="category-list" id="categoryList">
-                    <button class="category-btn active" data-category="all">Todas</button>
-                </div>
-            </nav>
 
-            <div class="sidebar-footer">
-                <button class="btn-icon clear" id="clearCompleted" aria-label="Limpar comprados" title="Limpar comprados">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                </button>
-                <button class="btn-icon theme" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">
-                    <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <circle cx="12" cy="12" r="5"/>
-                        <line x1="12" y1="1" x2="12" y2="3"/>
-                        <line x1="12" y1="21" x2="12" y2="23"/>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                        <line x1="1" y1="12" x2="3" y2="12"/>
-                        <line x1="21" y1="12" x2="23" y2="12"/>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                    </svg>
-                    <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                    </svg>
-                </button>
-                <button class="btn-icon share" id="shareBtn" aria-label="Exportar lista" title="Exportar lista">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                        <polyline points="16 6 12 2 8 6"/>
-                        <line x1="12" y1="2" x2="12" y2="15"/>
-                    </svg>
-                </button>
+                <div class="sidebar-panels">
+                    <div class="sidebar-panel active" data-panel="compras">
+                        <nav class="sidebar-nav">
+                            <p class="sidebar-section-label">Status</p>
+                            <div class="progress-section">
+                                <div class="progress-info">
+                                    <span class="progress-text" id="progressText">0 de 0 itens</span>
+                                    <span class="progress-percent" id="progressPercent">0%</span>
+                                </div>
+                                <div class="progress-bar-track">
+                                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                                </div>
+                            </div>
+                            <div class="filter-list">
+                                <button class="filter-btn active" data-filter="all">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                                    </svg>
+                                    <span>Todos</span>
+                                    <span class="count-badge" id="countAll">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="pending">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                        <circle cx="12" cy="12" r="9"/>
+                                        <polyline points="12 7 12 12 16 14"/>
+                                    </svg>
+                                    <span>Pendentes</span>
+                                    <span class="count-badge" id="countPending">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="completed">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                        <polyline points="22 4 12 14.01 9 11.01"/>
+                                    </svg>
+                                    <span>Comprados</span>
+                                    <span class="count-badge" id="countCompleted">0</span>
+                                </button>
+                            </div>
+                        </nav>
+
+                        <nav class="sidebar-nav">
+                            <div class="nav-header">
+                                <p class="sidebar-section-label">Categorias</p>
+                                <button class="btn-add-category" id="addCategoryBtn" aria-label="Nova categoria">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="category-list" id="categoryList">
+                                <button class="category-btn active" data-category="all">Todas</button>
+                            </div>
+                        </nav>
+                    </div>
+
+                    <div class="sidebar-panel" data-panel="lembretes">
+                        <nav class="sidebar-nav">
+                            <div class="nav-header">
+                                <p class="sidebar-section-label">Lembretes</p>
+                                <div class="nav-header-actions">
+                                    <button class="btn-add-category notif-toggle" id="notifToggle" aria-label="Ativar notificações" title="Ativar notificações">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                        </svg>
+                                        <span class="notif-dot"></span>
+                                    </button>
+                                    <button class="btn-add-category" id="addReminderBtn" aria-label="Novo lembrete">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="reminder-stats" id="reminderStats" hidden>
+                                <span id="reminderStatsToday">0 hoje</span>
+                                <span class="reminder-stats-sep">·</span>
+                                <span id="reminderStatsLater">0 depois</span>
+                            </div>
+                            <div class="reminder-mini-list" id="reminderMiniList"></div>
+                            <div class="panel-placeholder" id="reminderMiniEmpty">
+                                <p id="reminderMiniEmptyTitle">Nenhum lembrete</p>
+                                <span class="empty-hint" id="reminderMiniEmptyHint">Use o + para criar</span>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+
+                <div class="sidebar-footer">
+                    <button class="btn-icon clear" id="clearCompleted" aria-label="Limpar comprados" title="Limpar comprados">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                    <button class="btn-icon theme" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">
+                        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </button>
+                    <button class="btn-icon share" id="shareBtn" aria-label="Exportar lista" title="Exportar lista">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                            <polyline points="16 6 12 2 8 6"/>
+                            <line x1="12" y1="2" x2="12" y2="15"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -126,52 +194,93 @@
                             <line x1="3" y1="18" x2="21" y2="18"></line>
                         </svg>
                     </button>
-                    <span class="app-title">Lista de Compras</span>
+                    <span class="app-title" id="appTitle">Lista de Compras</span>
                     <span id="itemCount" class="mobile-count">0 itens</span>
                 </div>
 
-                <div class="search-bar" id="searchBar">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <circle cx="11" cy="11" r="8"/>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <input type="text" id="searchInput" class="search-input" placeholder="Buscar item..." inputmode="text" autocapitalize="off" autocomplete="off">
-                    <button class="search-clear" id="searchClear" aria-label="Limpar busca" style="display:none">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                <div class="view active" id="shoppingView">
+                    <div class="search-bar" id="searchBar">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                    </button>
-                </div>
-
-                <div class="mobile-filters" id="mobileFilters">
-                    <div class="filter-chips">
-                        <button class="filter-chip active" data-filter="all">Todos</button>
-                        <button class="filter-chip" data-filter="pending">Pendentes</button>
-                        <button class="filter-chip" data-filter="completed">Comprados</button>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar item..." inputmode="text" autocapitalize="off" autocomplete="off">
+                        <button class="search-clear" id="searchClear" aria-label="Limpar busca" style="display:none">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="category-select-wrapper">
-                        <select id="mobileCategorySelect" class="mobile-category-select">
-                            <option value="all">Categorias</option>
-                        </select>
+
+                    <div class="mobile-filters" id="mobileFilters">
+                        <div class="filter-chips">
+                            <button class="filter-chip active" data-filter="all">Todos</button>
+                            <button class="filter-chip" data-filter="pending">Pendentes</button>
+                            <button class="filter-chip" data-filter="completed">Comprados</button>
+                        </div>
+                        <div class="category-select-wrapper">
+                            <select id="mobileCategorySelect" class="mobile-category-select">
+                                <option value="all">Categorias</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <ul class="item-list" id="itemList"></ul>
+
+                    <div class="list-footer" id="listFooter">
+                        <span class="footer-total-label">Total estimado:</span>
+                        <span class="footer-total-value" id="totalPrice">R$ 0,00</span>
+                    </div>
+
+<div class="empty-state" id="emptyState">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                            <rect x="9" y="3" width="6" height="4" rx="1"/>
+                            <path d="M9 14l2 2 4-4"/>
+                        </svg>
+                        <p>Lista vazia</p>
+                        <span class="empty-hint">Clique no + para adicionar itens</span>
+                    </div>
+
+                    <div class="empty-state" id="noMatchState">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <p>Nenhum item encontrado</p>
+                        <span class="empty-hint">Tente outro filtro ou categoria</span>
                     </div>
                 </div>
 
-                <ul class="item-list" id="itemList"></ul>
+                <div class="view" id="remindersView">
+                    <div class="notif-prompt" id="notifPrompt" hidden>
+                        <div class="notif-prompt-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                        </div>
+                        <div class="notif-prompt-text">
+                            <strong>Ativar notificações?</strong>
+                            <span id="notifPromptHint">Avisamos quando um lembrete estiver próximo.</span>
+                        </div>
+                        <div class="notif-prompt-actions">
+                            <button type="button" class="btn btn-secondary" id="notifDismiss">Agora não</button>
+                            <button type="button" class="btn btn-primary" id="notifEnable">Ativar</button>
+                        </div>
+                    </div>
 
-                <div class="list-footer" id="listFooter">
-                    <span class="footer-total-label">Total estimado:</span>
-                    <span class="footer-total-value" id="totalPrice">R$ 0,00</span>
-                </div>
+                    <ul class="reminder-list" id="reminderList"></ul>
 
-                <div class="empty-state" id="emptyState">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                        <rect x="9" y="3" width="6" height="4" rx="1"/>
-                        <path d="M9 14l2 2 4-4"/>
-                    </svg>
-                    <p>Lista vazia</p>
-                    <span class="empty-hint">Clique no + para adicionar itens</span>
+                    <div class="empty-state" id="reminderEmptyState">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <p>Nenhum lembrete</p>
+                        <span class="empty-hint">Clique no + para criar um lembrete</span>
+                    </div>
                 </div>
             </div>
         </main>
@@ -204,6 +313,13 @@
                     <line x1="7" y1="7" x2="7.01" y2="7"/>
                 </svg>
                 <span>Nova categoria</span>
+            </button>
+            <button class="fab-menu-item fab-menu-reminder" id="fabAddReminder">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span>Novo lembrete</span>
             </button>
         </div>
     </div>
@@ -277,9 +393,22 @@
                         <span class="share-option-desc">Arquivo com toda a lista e categorias</span>
                     </div>
                 </button>
+                <button class="share-option" id="shareImportJson">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <div class="share-option-text">
+                        <span class="share-option-title">Importar JSON</span>
+                        <span class="share-option-desc">Mesclar um arquivo salvo com a lista atual</span>
+                    </div>
+                </button>
             </div>
         </div>
     </div>
+
+    <input type="file" id="importFileInput" accept="application/json,.json" hidden>
 
     <div class="modal-overlay" id="categoryModalOverlay">
         <div class="modal" id="categoryModal">
@@ -307,6 +436,63 @@
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="categoryModalCancel">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="categoryModalSubmit">Criar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="reminderModalOverlay">
+        <div class="modal" id="reminderModal">
+            <div class="modal-header">
+                <h2 id="reminderModalTitle">Novo lembrete</h2>
+                <button class="modal-close" id="reminderModalClose" aria-label="Fechar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form class="modal-form" id="reminderModalForm">
+                <input type="hidden" id="editingReminderId">
+                <div class="form-group">
+                    <label for="reminderName">Nome do lembrete</label>
+                    <input type="text" id="reminderName" class="input" placeholder="Ex: Ligar para a farmácia..." autocomplete="off" required inputmode="text" autocapitalize="sentences">
+                </div>
+                <div class="form-group">
+                    <label for="reminderDescription">Descrição</label>
+                    <textarea id="reminderDescription" class="input" rows="2" placeholder="Detalhes do lembrete (opcional)"></textarea>
+                </div>
+
+                <div class="form-divider">Alerta</div>
+
+                <div class="form-group">
+                    <label for="reminderType">Tipo</label>
+                    <select id="reminderType" class="select">
+                        <option value="unico">Único</option>
+                        <option value="diario">Diário</option>
+                        <option value="mensal">Mensal</option>
+                    </select>
+                </div>
+                <div class="form-group" id="reminderDateGroup">
+                    <label for="reminderDate">Data</label>
+                    <input type="date" id="reminderDate" class="input">
+                    <span class="form-hint" id="reminderDateHint">No mensal, o dia da data é o dia do mês do alerta.</span>
+                </div>
+                <div class="form-group">
+                    <label for="reminderTime">Horário</label>
+                    <input type="time" id="reminderTime" class="input" inputmode="numeric">
+                    <span class="form-hint" id="reminderTimeHint">O app calcula o próximo horário do alerta.</span>
+                </div>
+                <div class="form-group" id="reminderAdvanceGroup" hidden>
+                    <label class="form-checkbox" for="reminderAdvanceWarn">
+                        <input type="checkbox" id="reminderAdvanceWarn">
+                        <span>Avisar 2 dias antes</span>
+                    </label>
+                    <span class="form-hint">Opcional: manda um aviso antes do alerta.</span>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="reminderModalCancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="reminderModalSubmit">Criar</button>
                 </div>
             </form>
         </div>

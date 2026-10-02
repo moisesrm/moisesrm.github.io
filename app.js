@@ -18,6 +18,8 @@ const shareModalOverlay = document.getElementById('shareModalOverlay');
 const shareModalClose = document.getElementById('shareModalClose');
 const shareCopyText = document.getElementById('shareCopyText');
 const shareDownloadJson = document.getElementById('shareDownloadJson');
+const shareImportJson = document.getElementById('shareImportJson');
+const importFileInput = document.getElementById('importFileInput');
 const modalItemName = document.getElementById('modalItemName');
 const modalCategory = document.getElementById('modalCategory');
 const modalQuantity = document.getElementById('modalQuantity');
@@ -28,6 +30,7 @@ const itemList = document.getElementById('itemList');
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
 const emptyState = document.getElementById('emptyState');
+const noMatchState = document.getElementById('noMatchState');
 const itemCount = document.getElementById('itemCount');
 const clearCompleted = document.getElementById('clearCompleted');
 const countAll = document.getElementById('countAll');
@@ -52,6 +55,89 @@ const themeToggle = document.getElementById('themeToggle');
 const progressBarFill = document.getElementById('progressBarFill');
 const progressText = document.getElementById('progressText');
 const progressPercent = document.getElementById('progressPercent');
+const railTabs = document.querySelectorAll('.rail-tab');
+const sidebarPanels = document.querySelectorAll('.sidebar-panel');
+const sidebarTitle = document.getElementById('sidebarTitle');
+const appTitle = document.getElementById('appTitle');
+const shoppingView = document.getElementById('shoppingView');
+const remindersView = document.getElementById('remindersView');
+const reminderList = document.getElementById('reminderList');
+const reminderEmptyState = document.getElementById('reminderEmptyState');
+const notifPrompt = document.getElementById('notifPrompt');
+const notifPromptHint = document.getElementById('notifPromptHint');
+const notifEnable = document.getElementById('notifEnable');
+const notifDismiss = document.getElementById('notifDismiss');
+const notifToggle = document.getElementById('notifToggle');
+const reminderMiniList = document.getElementById('reminderMiniList');
+const reminderStats = document.getElementById('reminderStats');
+const reminderStatsToday = document.getElementById('reminderStatsToday');
+const reminderStatsLater = document.getElementById('reminderStatsLater');
+const reminderMiniEmpty = document.getElementById('reminderMiniEmpty');
+const reminderMiniEmptyTitle = document.getElementById('reminderMiniEmptyTitle');
+const reminderMiniEmptyHint = document.getElementById('reminderMiniEmptyHint');
+const addReminderBtn = document.getElementById('addReminderBtn');
+const fabAddReminder = document.getElementById('fabAddReminder');
+const reminderModalOverlay = document.getElementById('reminderModalOverlay');
+const reminderModalClose = document.getElementById('reminderModalClose');
+const reminderModalCancel = document.getElementById('reminderModalCancel');
+const reminderModalTitle = document.getElementById('reminderModalTitle');
+const reminderModalForm = document.getElementById('reminderModalForm');
+const reminderModalSubmit = document.getElementById('reminderModalSubmit');
+const editingReminderId = document.getElementById('editingReminderId');
+const reminderName = document.getElementById('reminderName');
+const reminderDescription = document.getElementById('reminderDescription');
+const reminderTime = document.getElementById('reminderTime');
+const reminderDate = document.getElementById('reminderDate');
+const reminderType = document.getElementById('reminderType');
+const reminderDateGroup = document.getElementById('reminderDateGroup');
+const reminderDateHint = document.getElementById('reminderDateHint');
+const reminderTimeHint = document.getElementById('reminderTimeHint');
+const reminderAdvanceGroup = document.getElementById('reminderAdvanceGroup');
+const reminderAdvanceWarn = document.getElementById('reminderAdvanceWarn');
+
+const TAB_TITLES = {
+    compras: 'Compras',
+    lembretes: 'Lembretes'
+};
+
+const TAB_APP_TITLES = {
+    compras: 'Lista de Compras',
+    lembretes: 'Meus Lembretes'
+};
+
+const REMINDER_NEXT_HOUR_MINUTES = 60;
+const REMINDER_ADVANCE_DAYS = 2;
+const REMINDER_EXIT_ANIM_MS = 220;
+
+// Estados do ponto. A COR fica no CSS (bloco "DOT COLORS"), para que menu e
+// cards compartilhem a fonte e o dark mode funcione sem re-render.
+const REMINDER_DOT_STATES = {
+    sem_horario: 'Sem próximo horário',
+    fora: 'Fora de hoje',
+    mais_tarde: 'Mais tarde hoje',
+    proxima_hora: 'Dentro da próxima hora',
+    passou: 'Horário de hoje já passou'
+};
+
+const REMINDER_TYPE_LABELS = {
+    unico: 'Único',
+    diario: 'Diário',
+    mensal: 'Mensal'
+};
+
+const REMINDER_STATUS_LABELS = {
+    pendente: 'Pendente',
+    notificado: 'Notificado',
+    atrasado: 'Atrasado',
+    concluido: 'Concluído'
+};
+
+const NOTIFICATION_PERMISSION_KEY = 'shopping-notification-permission';
+
+const REMINDER_CHECK_INTERVAL_MS = 30000;
+let reminderPollingTimer = null;
+
+let activeTab = 'compras';
 
 let items = JSON.parse(localStorage.getItem('shopping-list')) || [];
 items.forEach((item, i) => { if (!item.order) item.order = i; });
@@ -69,6 +155,8 @@ let categories = JSON.parse(localStorage.getItem('shopping-categories')) || [
 let currentFilter = 'all';
 let currentCategory = 'all';
 let searchTerm = '';
+let reminders = JSON.parse(localStorage.getItem('shopping-reminders')) || [];
+reminders = reminders.map(migrateReminder);
 let draggedItemEl = null;
 let touchDragItem = null;
 let touchDragId = null;
@@ -142,6 +230,169 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
         updateThemeButton();
     }
 });
+
+function isNotificationSupported() {
+    return 'Notification' in window;
+}
+
+function getNotificationPermission() {
+    if (!isNotificationSupported()) return 'unsupported';
+    return Notification.permission;
+}
+
+function saveNotificationPermission(value) {
+    localStorage.setItem(NOTIFICATION_PERMISSION_KEY, value);
+}
+
+function renderNotificationPrompt() {
+    const permission = getNotificationPermission();
+    const dismissed = localStorage.getItem(NOTIFICATION_PERMISSION_KEY) === 'dismissed';
+
+    renderNotificationToggle();
+
+    notifPrompt.hidden = permission !== 'default' || dismissed;
+
+    if (!notifPrompt.hidden) {
+        notifPromptHint.textContent = 'Avisamos quando um lembrete estiver próximo.';
+    }
+}
+
+async function requestNotificationPermission() {
+    const permission = getNotificationPermission();
+
+    if (permission === 'unsupported') {
+        showToast('Este navegador não suporta notificações', 'error');
+        return 'unsupported';
+    }
+
+    if (permission === 'granted') {
+        saveNotificationPermission('granted');
+        renderNotificationPrompt();
+        return 'granted';
+    }
+
+    if (permission === 'denied') {
+        showToast('Permissão bloqueada. Libere nas configurações do site', 'error');
+        return 'denied';
+    }
+
+    let result = 'default';
+    try {
+        result = await Notification.requestPermission();
+    } catch (error) {
+        showToast('Não foi possível pedir a permissão', 'error');
+        return 'default';
+    }
+
+    saveNotificationPermission(result);
+
+    if (result === 'granted') {
+        showToast('Notificações ativadas!', 'success');
+    } else {
+        showToast('Permissão de notificações negada', 'info');
+    }
+
+    renderNotificationPrompt();
+    return result;
+}
+
+function renderNotificationToggle() {
+    const permission = getNotificationPermission();
+
+    notifToggle.disabled = false;
+    notifToggle.classList.remove('active', 'blocked', 'needs-attention');
+
+    if (permission === 'granted') {
+        notifToggle.classList.add('active');
+        notifToggle.title = 'Notificações ativas';
+        notifToggle.setAttribute('aria-label', 'Notificações ativas');
+        return;
+    }
+
+    if (permission === 'denied') {
+        notifToggle.classList.add('blocked', 'needs-attention');
+        notifToggle.title = 'Bloqueadas nas permissões do navegador';
+        notifToggle.setAttribute('aria-label', 'Notificações bloqueadas pelo navegador');
+        return;
+    }
+
+    if (permission === 'unsupported') {
+        notifToggle.disabled = true;
+        notifToggle.title = 'Não suportado neste navegador';
+        notifToggle.setAttribute('aria-label', 'Notificações não suportadas');
+        return;
+    }
+
+    notifToggle.classList.add('needs-attention');
+    notifToggle.title = 'Ativar notificações';
+    notifToggle.setAttribute('aria-label', 'Ativar notificações');
+}
+
+function handleNotificationToggle() {
+    const permission = getNotificationPermission();
+
+    if (permission === 'granted') {
+        showToast('Notificações já estão ativas', 'info');
+        return;
+    }
+
+    if (permission === 'unsupported') {
+        showToast('Este navegador não suporta notificações', 'error');
+        return;
+    }
+
+    if (permission === 'denied') {
+        showToast('Permissão bloqueada. Libere nas configurações do site', 'error');
+        return;
+    }
+
+    localStorage.removeItem(NOTIFICATION_PERMISSION_KEY);
+    requestNotificationPermission();
+}
+
+function dismissNotificationPrompt() {
+    saveNotificationPermission('dismissed');
+    renderNotificationPrompt();
+}
+
+function startReminderPolling() {
+    if (reminderPollingTimer) return;
+    reminderPollingTimer = setInterval(checkPendingReminders, REMINDER_CHECK_INTERVAL_MS);
+}
+
+function switchTab(tab) {
+    if (!TAB_TITLES[tab]) return;
+    activeTab = tab;
+    railTabs.forEach((btn) => {
+        const isActive = btn.dataset.tab === tab;
+        btn.classList.toggle('active', isActive);
+        if (isActive) {
+            btn.setAttribute('aria-current', 'true');
+        } else {
+            btn.removeAttribute('aria-current');
+        }
+    });
+    sidebarPanels.forEach((panel) => {
+        panel.classList.toggle('active', panel.dataset.panel === tab);
+    });
+    sidebarTitle.textContent = TAB_TITLES[tab];
+
+    const isShopping = tab === 'compras';
+    shoppingView.classList.toggle('active', isShopping);
+    remindersView.classList.toggle('active', !isShopping);
+    appTitle.textContent = TAB_APP_TITLES[tab];
+
+    fabAddItem.style.display = isShopping ? '' : 'none';
+    fabAddCategory.style.display = isShopping ? '' : 'none';
+    fabAddReminder.style.display = isShopping ? 'none' : '';
+
+    if (isShopping) {
+        itemCount.textContent = formatCount();
+    } else {
+        renderReminders();
+        renderNotificationPrompt();
+    }
+}
 
 function openSidebar() {
     sidebar.classList.add('open');
@@ -260,6 +511,7 @@ function initModalSwipe(overlay, closeFn) {
 }
 
 function openShareModal() {
+    closeSidebar();
     shareModalOverlay.classList.add('active');
 }
 
@@ -324,6 +576,136 @@ function downloadListJson() {
     URL.revokeObjectURL(url);
     showToast('Lista exportada como JSON!');
     closeShareModal();
+}
+
+function normalizeText(text) {
+    return removeAccents(String(text || '').toLowerCase()).trim();
+}
+
+function buildImportedItem(item, category, id) {
+    const quantity = parseInt(item.quantity, 10);
+    const price = parseFloat(item.price);
+    return {
+        id,
+        name: String(item.name),
+        category,
+        quantity: quantity > 0 ? quantity : 1,
+        completed: Boolean(item.completed),
+        createdAt: item.createdAt || Date.now(),
+        order: typeof item.order === 'number' ? item.order : Date.now(),
+        price: price > 0 ? price : 0
+    };
+}
+
+function mergeImportedData(data) {
+    if (!data || typeof data !== 'object' || !Array.isArray(data.items)) {
+        throw new Error('Formato inválido');
+    }
+
+    const nextCategories = categories.slice();
+    const nextItems = items.slice();
+    const categoryIdMap = {};
+    let newCategories = 0;
+    let added = 0;
+    let discarded = 0;
+
+    const importedCategories = Array.isArray(data.categories) ? data.categories : [];
+    importedCategories.forEach((cat) => {
+        if (!cat || !cat.name) return;
+
+        const sameId = cat.id ? nextCategories.find(c => c.id === cat.id) : null;
+        if (sameId) {
+            categoryIdMap[cat.id] = sameId.id;
+            return;
+        }
+
+        const sameName = nextCategories.find(c => normalizeText(c.name) === normalizeText(cat.name));
+        if (sameName) {
+            categoryIdMap[cat.id] = sameName.id;
+            return;
+        }
+
+        const newId = cat.id || generateId();
+        nextCategories.push({
+            id: newId,
+            name: String(cat.name),
+            color: cat.color || '#2563eb'
+        });
+        categoryIdMap[cat.id || newId] = newId;
+        newCategories++;
+    });
+
+    data.items.forEach((item) => {
+        if (!item || !item.name) return;
+
+        const category = categoryIdMap[item.category] || item.category;
+        const collision = nextItems.find(i => i.id === item.id);
+
+        if (collision) {
+            const sameName = normalizeText(collision.name) === normalizeText(item.name);
+            const sameCategory = (collision.category || '') === (category || '');
+            if (sameName && sameCategory) {
+                discarded++;
+                return;
+            }
+            nextItems.push(buildImportedItem(item, category, generateId()));
+            added++;
+            return;
+        }
+
+        nextItems.push(buildImportedItem(item, category, item.id));
+        added++;
+    });
+
+    categories = nextCategories;
+    items = nextItems;
+    saveItems();
+    saveCategories();
+    renderCategorySelects();
+    renderDebounced();
+
+    return { added, discarded, newCategories };
+}
+
+function handleImportFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+        let result;
+        try {
+            result = mergeImportedData(JSON.parse(reader.result));
+        } catch (error) {
+            console.error('Falha ao importar:', error);
+            closeShareModal();
+            showToast('Arquivo inválido', 'error');
+            return;
+        }
+
+        closeShareModal();
+
+        if (result.added === 0 && result.newCategories === 0) {
+            showToast('Nada novo para importar', 'info');
+            return;
+        }
+
+        const details = [];
+        if (result.added > 0) details.push(`${result.added} item${result.added > 1 ? 'ns' : ''}`);
+        if (result.newCategories > 0) details.push(`${result.newCategories} categoria${result.newCategories > 1 ? 's' : ''}`);
+        if (result.discarded > 0) details.push(`${result.discarded} duplicado${result.discarded > 1 ? 's' : ''} ignorado${result.discarded > 1 ? 's' : ''}`);
+
+        showToast(`Importado: ${details.join(', ')}`, 'success');
+    };
+
+    reader.onerror = () => {
+        closeShareModal();
+        showToast('Erro ao ler o arquivo', 'error');
+    };
+
+    reader.readAsText(file);
 }
 
 function showToast(message, type = 'info') {
@@ -530,6 +912,553 @@ function deleteCategory(id) {
     showToast('Categoria removida!', 'info');
 }
 
+function saveReminders() {
+    localStorage.setItem('shopping-reminders', JSON.stringify(reminders));
+}
+
+function migrateReminder(reminder) {
+    if (reminder.type !== 'recorrente') return reminder;
+
+    const now = new Date();
+    const day = Number(reminder.day) || 0;
+    const date = day > 0
+        ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        : '';
+
+    return { ...reminder, type: 'mensal', date };
+}
+
+function getReminderNextTrigger(reminder, from) {
+    if (!reminder.time) return null;
+
+    const [hour, minute] = reminder.time.split(':').map(Number);
+
+    function atDay(year, monthIndex, day) {
+        const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+        return new Date(year, monthIndex, Math.min(day, lastDay), hour, minute, 0, 0);
+    }
+
+    if (reminder.type === 'diario') {
+        const today = atDay(from.getFullYear(), from.getMonth(), from.getDate());
+        return today > from ? today : atDay(from.getFullYear(), from.getMonth(), from.getDate() + 1);
+    }
+
+    if (reminder.type === 'mensal') {
+        const day = reminderDayOfMonth(reminder) || from.getDate();
+        const thisMonth = atDay(from.getFullYear(), from.getMonth(), day);
+        return thisMonth > from ? thisMonth : atDay(from.getFullYear(), from.getMonth() + 1, day);
+    }
+
+    if (!reminder.date) {
+        const today = atDay(from.getFullYear(), from.getMonth(), from.getDate());
+        return today > from ? today : null;
+    }
+
+    const [year, month, day] = reminder.date.split('-').map(Number);
+    return atDay(year, month - 1, day);
+}
+
+function reminderDayOfMonth(reminder) {
+    if (!reminder.date) return 0;
+    return Number(reminder.date.split('-')[2]) || 0;
+}
+
+function formatReminderWhen(reminder) {
+    const next = getReminderNextTrigger(reminder, new Date());
+
+    if (!next) {
+        if (!reminder.time) return 'Sem horário';
+        return reminder.type === 'unico' ? 'Data e hora já passaram' : 'Sem data';
+    }
+
+    return next.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function reminderSortKey(reminder) {
+    const next = getReminderNextTrigger(reminder, new Date());
+    return next ? next.getTime() : Infinity;
+}
+
+function focusReminder(id) {
+    if (!id) return;
+
+    const reminder = reminders.find(r => r.id === id);
+    if (!reminder) return;
+
+    switchTab('lembretes');
+    renderReminders();
+
+    setTimeout(() => {
+        const el = reminderList.querySelector(`[data-id="${id}"]`);
+        if (!el) return;
+
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('flash');
+
+        setTimeout(() => el.classList.remove('flash'), 2000);
+    }, 120);
+}
+
+function focusReminderFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('lembrete');
+    if (!id) return;
+
+    window.history.replaceState({}, '', window.location.pathname);
+    focusReminder(id);
+}
+
+function advanceReminderTrigger(reminder, from) {
+    if (reminder.type === 'unico') {
+        reminder.nextTrigger = null;
+        reminder.advanceTrigger = null;
+        reminder.notified = true;
+        return;
+    }
+
+    const next = getReminderNextTrigger(reminder, from);
+    reminder.nextTrigger = next ? next.getTime() : null;
+
+    const advanceAt = getReminderAdvanceTrigger(reminder, from);
+    reminder.advanceTrigger = advanceAt ? advanceAt.getTime() : null;
+
+    reminder.notified = false;
+}
+
+function showNotificationWithFallback(title, options) {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready
+            .then((registration) => registration.showNotification(title, options))
+            .catch(() => {
+                try {
+                    new Notification(title, options);
+                } catch (error) {
+                    console.log('Falha ao exibir notificação:', error);
+                }
+            });
+        return;
+    }
+
+    try {
+        new Notification(title, options);
+    } catch (error) {
+        console.log('Falha ao exibir notificação:', error);
+    }
+}
+
+function showReminderNotification(reminder) {
+    showNotificationWithFallback(reminder.name, {
+        body: reminder.description || `Lembrete ${formatReminderWhen(reminder)}`,
+        tag: `lembrete-${reminder.id}`,
+        icon: 'icon-192.png',
+        badge: 'icon-192.png',
+        data: { reminderId: reminder.id }
+    });
+}
+
+function showReminderAdvanceNotification(reminder) {
+    showNotificationWithFallback(`${reminder.name} - em ${REMINDER_ADVANCE_DAYS} dias`, {
+        body: reminder.description || `Lembrete ${formatReminderWhen(reminder)}`,
+        tag: `lembrete-adv-${reminder.id}`,
+        icon: 'icon-192.png',
+        badge: 'icon-192.png',
+        data: { reminderId: reminder.id }
+    });
+}
+
+function checkPendingReminders() {
+    if (getNotificationPermission() !== 'granted') return;
+
+    const now = new Date();
+    const nowTime = now.getTime();
+    let changed = false;
+
+    reminders.forEach((reminder) => {
+        if (reminder.completed) return;
+
+        if (reminder.advanceTrigger && reminder.advanceTrigger <= nowTime) {
+            showReminderAdvanceNotification(reminder);
+            reminder.advanceTrigger = null;
+            changed = true;
+        }
+
+        if (reminder.nextTrigger && reminder.nextTrigger <= nowTime) {
+            showReminderNotification(reminder);
+            advanceReminderTrigger(reminder, now);
+            changed = true;
+        }
+    });
+
+    if (changed) {
+        saveReminders();
+        renderReminders();
+    }
+}
+
+function sortReminders() {
+    reminders.sort((a, b) => reminderSortKey(a) - reminderSortKey(b));
+}
+
+function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear()
+        && a.getMonth() === b.getMonth()
+        && a.getDate() === b.getDate();
+}
+
+function isReminderToday(reminder, now) {
+    const next = getReminderNextTrigger(reminder, now);
+    return next ? isSameDay(next, now) : false;
+}
+
+function hasReminderTimePassedToday(reminder, now) {
+    const next = getReminderNextTrigger(reminder, now);
+    return next ? next.getTime() <= now.getTime() : false;
+}
+
+function getReminderStatus(reminder, now) {
+    if (reminder.completed) return 'concluido';
+    if (reminder.notified) return 'notificado';
+    if (reminder.nextTrigger && reminder.nextTrigger <= now.getTime()) return 'atrasado';
+    return 'pendente';
+}
+
+function reminderDotState(reminder, now) {
+    const next = getReminderNextTrigger(reminder, now);
+
+    if (!next) return 'sem_horario';
+
+    if (!isSameDay(next, now)) return 'fora';
+
+    const diffInMinutes = Math.round((next - now) / 60000);
+
+    if (diffInMinutes <= 0) return 'passou';
+    if (diffInMinutes <= REMINDER_NEXT_HOUR_MINUTES) return 'proxima_hora';
+    return 'mais_tarde';
+}
+
+function buildReminderCard(reminder, now) {
+    const typeLabel = REMINDER_TYPE_LABELS[reminder.type] || REMINDER_TYPE_LABELS.unico;
+    const status = getReminderStatus(reminder, now);
+    const dot = reminderDotState(reminder, now);
+
+    const li = document.createElement('li');
+    li.className = `reminder-card ${status} dot-${dot}`;
+    li.dataset.id = reminder.id;
+    li.innerHTML = `
+        <div class="reminder-card-body">
+            <div class="reminder-card-meta">
+                <span class="reminder-tag type">${typeLabel}</span>
+                <span class="reminder-tag">${escapeHtml(formatReminderWhen(reminder))}</span>
+                ${status === 'pendente' ? '' : `<span class="reminder-tag status ${status}">${REMINDER_STATUS_LABELS[status]}</span>`}
+            </div>
+            <span class="reminder-card-name">${escapeHtml(reminder.name)}</span>
+            ${reminder.description ? `<span class="reminder-card-desc">${escapeHtml(reminder.description)}</span>` : ''}
+        </div>
+        <div class="reminder-card-actions">
+            <button class="reminder-edit" data-edit-reminder="${reminder.id}" aria-label="Editar lembrete" title="Editar lembrete">
+                <svg viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+            </button>
+            <button class="reminder-delete" data-delete-reminder="${reminder.id}" aria-label="Excluir lembrete" title="Excluir lembrete">
+                <svg viewBox="0 0 24 24">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    return li;
+}
+
+function buildMiniReminder(reminder, now) {
+    const dot = reminderDotState(reminder, now);
+    const hint = REMINDER_DOT_STATES[dot];
+
+    const mini = document.createElement('span');
+    mini.className = 'category-btn';
+    mini.innerHTML = `
+        <span class="category-item">
+            <span class="cat-dot dot-${dot}" title="${escapeHtml(hint)}"></span>
+            <span>${escapeHtml(reminder.name)}</span>
+            ${reminder.time ? `<span class="count-badge">${escapeHtml(reminder.time)}</span>` : ''}
+        </span>
+        <button class="cat-action-btn" data-edit-reminder="${reminder.id}" title="Editar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+        </button>
+        <button class="cat-action-btn delete" data-delete-reminder="${reminder.id}" title="Excluir">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+        </button>
+    `;
+
+    return mini;
+}
+
+function appendMiniGroup(title, items, now) {
+    if (items.length === 0) return;
+
+    const header = document.createElement('p');
+    header.className = 'reminder-mini-group';
+    header.textContent = `${title} (${items.length})`;
+    reminderMiniList.appendChild(header);
+
+    items.forEach((reminder) => {
+        reminderMiniList.appendChild(buildMiniReminder(reminder, now));
+    });
+}
+
+function renderReminders() {
+    sortReminders();
+
+    reminderList.innerHTML = '';
+    reminderMiniList.innerHTML = '';
+
+    const now = new Date();
+
+    const isEmpty = reminders.length === 0;
+    const todayIds = new Set(
+        reminders
+            .filter((reminder) => isReminderToday(reminder, now))
+            .map((reminder) => reminder.id)
+    );
+
+    reminderEmptyState.style.display = isEmpty ? 'block' : 'none';
+    reminderMiniEmpty.style.display = todayIds.size === 0 ? 'block' : 'none';
+
+    if (!isEmpty && todayIds.size === 0) {
+        reminderMiniEmptyTitle.textContent = 'Nada para hoje';
+        reminderMiniEmptyHint.textContent = 'Feche o menu para ver todos';
+    } else if (isEmpty) {
+        reminderMiniEmptyTitle.textContent = 'Nenhum lembrete';
+        reminderMiniEmptyHint.textContent = 'Use o + para criar';
+    }
+
+    const todayList = reminders.filter((reminder) => todayIds.has(reminder.id));
+    const stillToAlert = todayList.filter((reminder) => !hasReminderTimePassedToday(reminder, now));
+    const alreadyAlerted = todayList.filter((reminder) => hasReminderTimePassedToday(reminder, now));
+    const laterCount = reminders.filter(
+        (reminder) => !todayIds.has(reminder.id) && reminder.nextTrigger
+    ).length;
+
+    reminderStats.hidden = isEmpty;
+    reminderStatsToday.textContent = `${todayIds.size} hoje`;
+    reminderStatsLater.textContent = `${laterCount} depois`;
+
+    reminders.forEach((reminder) => {
+        reminderList.appendChild(buildReminderCard(reminder, now));
+    });
+
+    appendMiniGroup('Já alertados', alreadyAlerted, now);
+    appendMiniGroup('Ainda vão alertar', stillToAlert, now);
+
+    if (activeTab === 'lembretes') {
+        const total = reminders.length;
+        itemCount.textContent = `${total} lembrete${total === 1 ? '' : 's'}`;
+    }
+}
+
+function canWarnInAdvance(reminder) {
+    if (!reminder.advanceWarn) return false;
+    if (reminder.type === 'diario') return false;
+    if (reminder.type === 'unico' && !reminder.date) return false;
+    return true;
+}
+
+function getReminderAdvanceTrigger(reminder, from) {
+    if (!canWarnInAdvance(reminder)) return null;
+
+    const next = getReminderNextTrigger(reminder, from);
+    if (!next) return null;
+
+    const advanceAt = new Date(next.getTime());
+    advanceAt.setDate(advanceAt.getDate() - REMINDER_ADVANCE_DAYS);
+
+    if (advanceAt <= from) return null;
+
+    return advanceAt;
+}
+
+function buildReminderDraft(data) {
+    return {
+        name: data.name,
+        description: data.description,
+        time: data.time,
+        date: data.date,
+        type: data.type,
+        advanceWarn: data.advanceWarn
+    };
+}
+
+function getReminderNextTimestamp(draft) {
+    const next = getReminderNextTrigger(draft, new Date());
+    return next ? next.getTime() : null;
+}
+
+function getReminderAdvanceTimestamp(draft, from) {
+    const advanceAt = getReminderAdvanceTrigger(draft, from || new Date());
+    return advanceAt ? advanceAt.getTime() : null;
+}
+
+function addReminder(data) {
+    reminders.push({
+        id: generateId(),
+        name: data.name,
+        description: data.description,
+        time: data.time,
+        date: data.date,
+        type: data.type,
+        advanceWarn: data.advanceWarn,
+        nextTrigger: getReminderNextTimestamp(buildReminderDraft(data)),
+        advanceTrigger: getReminderAdvanceTimestamp(buildReminderDraft(data)),
+        completed: false,
+        notified: false,
+        createdAt: Date.now()
+    });
+    saveReminders();
+    renderReminders();
+    showToast('Lembrete criado!', 'success');
+}
+
+function updateReminder(id, data) {
+    reminders = reminders.map(r => {
+        if (r.id !== id) return r;
+        return {
+            ...r,
+            name: data.name,
+            description: data.description,
+            time: data.time,
+            date: data.date,
+            type: data.type,
+            advanceWarn: data.advanceWarn,
+            nextTrigger: getReminderNextTimestamp(buildReminderDraft(data)),
+            advanceTrigger: getReminderAdvanceTimestamp(buildReminderDraft(data)),
+            notified: false
+        };
+    });
+    saveReminders();
+    renderReminders();
+    showToast('Lembrete atualizado!', 'success');
+}
+
+function deleteReminder(id) {
+    const reminder = reminders.find(r => r.id === id);
+    const el = reminderList.querySelector(`[data-id="${id}"]`);
+
+    const commit = () => {
+        reminders = reminders.filter(r => r.id !== id);
+        saveReminders();
+        renderReminders();
+        showToast(`Lembrete "${reminder ? reminder.name : ''}" excluído!`, 'info');
+    };
+
+    if (!el) {
+        commit();
+        return;
+    }
+
+    el.classList.add('removing');
+    setTimeout(commit, REMINDER_EXIT_ANIM_MS);
+}
+
+function toggleReminderTypeFields() {
+    const type = reminderType.value;
+    const isDaily = type === 'diario';
+    const isMonthly = type === 'mensal';
+
+    reminderDateGroup.hidden = isDaily;
+    reminderDateHint.hidden = !isMonthly;
+    reminderAdvanceGroup.hidden = !(isMonthly || (type === 'unico' && reminderDate.value));
+
+    reminderTimeHint.textContent = isDaily
+        ? 'Repete todo dia. O app calcula o próximo horário.'
+        : isMonthly
+            ? 'Repete todo mês. O app calcula o próximo horário.'
+            : 'O app calcula o próximo horário.';
+}
+
+function openReminderModal(editing = null) {
+    closeSidebar();
+
+    if (editing) {
+        reminderModalTitle.textContent = 'Editar lembrete';
+        reminderModalSubmit.textContent = 'Salvar';
+        editingReminderId.value = editing.id;
+        reminderName.value = editing.name;
+        reminderDescription.value = editing.description || '';
+        reminderTime.value = editing.time || '';
+        reminderDate.value = editing.date || '';
+        reminderType.value = editing.type || 'unico';
+        reminderAdvanceWarn.checked = editing.advanceWarn === true;
+    } else {
+        reminderModalTitle.textContent = 'Novo lembrete';
+        reminderModalSubmit.textContent = 'Criar';
+        editingReminderId.value = '';
+        reminderModalForm.reset();
+        reminderDate.value = '';
+    }
+
+    toggleReminderTypeFields();
+    reminderModalOverlay.classList.add('active');
+    setTimeout(() => reminderName.focus(), 100);
+    initModalSwipe(reminderModalOverlay, closeReminderModal);
+}
+
+function closeReminderModal() {
+    reminderModalOverlay.classList.remove('active');
+    reminderModalOverlay.removeEventListener('touchstart', reminderModalOverlay._touchStart);
+    reminderModalOverlay.removeEventListener('touchmove', reminderModalOverlay._touchMove);
+    reminderModalOverlay.removeEventListener('touchend', reminderModalOverlay._touchEnd);
+    editingReminderId.value = '';
+    reminderModalForm.reset();
+    toggleReminderTypeFields();
+}
+
+function submitReminder(e) {
+    e.preventDefault();
+
+    const name = reminderName.value.trim();
+    if (!name) return;
+
+    const type = reminderType.value;
+
+    if (type === 'mensal' && !reminderDate.value) {
+        showToast('Escolha a data para definir o dia do mês', 'error');
+        reminderDate.focus();
+        return;
+    }
+
+    const data = {
+        name,
+        description: reminderDescription.value.trim(),
+        time: reminderTime.value,
+        date: type === 'diario' ? '' : reminderDate.value,
+        type,
+        advanceWarn: reminderAdvanceWarn.checked && type !== 'diario' && !!reminderDate.value
+    };
+
+    if (editingReminderId.value) {
+        updateReminder(editingReminderId.value, data);
+    } else {
+        addReminder(data);
+    }
+
+    closeReminderModal();
+}
+
 function render() {
     let filtered = items;
 
@@ -556,18 +1485,8 @@ function render() {
     itemList.innerHTML = '';
 
     emptyState.style.display = items.length === 0 ? 'block' : 'none';
+    noMatchState.style.display = (items.length > 0 && filtered.length === 0) ? 'block' : 'none';
     clearCompleted.disabled = items.filter(i => i.completed).length === 0;
-
-    if (filtered.length === 0 && items.length > 0) {
-        const emptyMsg = document.createElement('div');
-        emptyMsg.className = 'empty-state';
-        emptyMsg.style.display = 'block';
-        emptyMsg.innerHTML = `<p>Nenhum item encontrado</p><span class="empty-hint">Tente outro filtro ou categoria</span>`;
-        itemList.parentElement.insertBefore(emptyMsg, clearCompleted.nextElementSibling);
-        document.querySelectorAll('.item-list + .empty-state').forEach(el => el.remove());
-    } else {
-        document.querySelectorAll('.empty-state').forEach(el => el.remove());
-    }
 
     // Group by category
     const grouped = {};
@@ -670,7 +1589,9 @@ function render() {
         itemList.appendChild(groupEl);
     }
 
-    itemCount.textContent = formatCount();
+    if (activeTab === 'compras') {
+        itemCount.textContent = formatCount();
+    }
     updateCounts();
     const total = getTotalPrice();
     const footer = document.getElementById('listFooter');
@@ -815,11 +1736,14 @@ shareBtn.addEventListener('click', openShareModal);
 shareModalClose.addEventListener('click', closeShareModal);
 shareCopyText.addEventListener('click', copyListToClipboard);
 shareDownloadJson.addEventListener('click', downloadListJson);
+shareImportJson.addEventListener('click', () => importFileInput.click());
+importFileInput.addEventListener('change', handleImportFile);
 
 modalClose.addEventListener('click', closeModal);
 modalCancel.addEventListener('click', closeModal);
 sidebarClose.addEventListener('click', closeSidebar);
 sidebarToggle.addEventListener('click', openSidebar);
+railTabs.forEach((btn) => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 addCategoryBtn.addEventListener('click', () => openCategoryModal());
 categoryModalClose.addEventListener('click', closeCategoryModal);
 categoryModalCancel.addEventListener('click', closeCategoryModal);
@@ -836,6 +1760,10 @@ categoryModalOverlay.addEventListener('click', (e) => {
     if (e.target === categoryModalOverlay) closeCategoryModal();
 });
 
+reminderModalOverlay.addEventListener('click', (e) => {
+    if (e.target === reminderModalOverlay) closeReminderModal();
+});
+
 document.addEventListener('click', (e) => {
     if (sidebar.classList.contains('open') && e.target === sidebarOverlay) {
         closeSidebar();
@@ -844,7 +1772,9 @@ document.addEventListener('click', (e) => {
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        if (categoryModalOverlay.classList.contains('active')) {
+        if (reminderModalOverlay.classList.contains('active')) {
+            closeReminderModal();
+        } else if (categoryModalOverlay.classList.contains('active')) {
             closeCategoryModal();
         } else if (shareModalOverlay.classList.contains('active')) {
             closeShareModal();
@@ -911,6 +1841,45 @@ categoryModalForm.addEventListener('submit', (e) => {
     closeCategoryModal();
 });
 
+reminderModalForm.addEventListener('submit', submitReminder);
+reminderModalClose.addEventListener('click', closeReminderModal);
+reminderModalCancel.addEventListener('click', closeReminderModal);
+reminderType.addEventListener('change', toggleReminderTypeFields);
+reminderDate.addEventListener('change', toggleReminderTypeFields);
+addReminderBtn.addEventListener('click', () => openReminderModal());
+notifEnable.addEventListener('click', () => requestNotificationPermission());
+notifDismiss.addEventListener('click', dismissNotificationPrompt);
+notifToggle.addEventListener('click', handleNotificationToggle);
+fabAddReminder.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fabContainer.classList.remove('open');
+    openReminderModal();
+});
+
+reminderList.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('[data-edit-reminder]');
+    if (editBtn) {
+        const reminder = reminders.find(r => r.id === editBtn.dataset.editReminder);
+        if (reminder) openReminderModal(reminder);
+        return;
+    }
+
+    const deleteBtn = e.target.closest('[data-delete-reminder]');
+    if (deleteBtn) deleteReminder(deleteBtn.dataset.deleteReminder);
+});
+
+reminderMiniList.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('[data-edit-reminder]');
+    if (editBtn) {
+        const reminder = reminders.find(r => r.id === editBtn.dataset.editReminder);
+        if (reminder) openReminderModal(reminder);
+        return;
+    }
+
+    const deleteBtn = e.target.closest('[data-delete-reminder]');
+    if (deleteBtn) deleteReminder(deleteBtn.dataset.deleteReminder);
+});
+
 filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         filterBtns.forEach(b => b.classList.remove('active'));
@@ -948,7 +1917,35 @@ mobileCategorySelect.addEventListener('change', (e) => {
 
 renderCategories();
 render();
+renderReminders();
 initTheme();
+renderNotificationToggle();
+
+const splashEl = document.getElementById('appSplash');
+if (splashEl) {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => splashEl.classList.add('is-done'));
+    });
+    setTimeout(() => splashEl.remove(), 800);
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    checkPendingReminders();
+    renderReminders();
+});
+
+window.addEventListener('focus', checkPendingReminders);
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (!event.data || event.data.type !== 'notification-click') return;
+        focusReminder(event.data.reminderId);
+    });
+}
+
+startReminderPolling();
+focusReminderFromUrl();
 
 itemList.addEventListener('dragstart', (e) => {
     const itemEl = e.target.closest('.item');
@@ -1147,6 +2144,12 @@ itemList.addEventListener('touchend', (e) => {
 let edgeSwipeStartX = 0;
 let edgeSwipeActive = false;
 
+const SIDEBAR_SWIPE_RATIO = 0.3;
+
+function getSidebarWidth() {
+    return sidebar.getBoundingClientRect().width || window.innerWidth;
+}
+
 edgeSwipeArea.addEventListener('touchstart', (e) => {
     if (sidebar.classList.contains('open')) return;
     edgeSwipeStartX = e.touches[0].clientX;
@@ -1161,8 +2164,9 @@ edgeSwipeArea.addEventListener('touchmove', (e) => {
     if (!sidebar.classList.contains('open')) {
         sidebar.style.display = 'flex';
     }
-    const progress = Math.min(deltaX / 100, 1);
-    sidebar.style.transform = `translateX(${-280 + (280 * progress)}px)`;
+    const width = getSidebarWidth();
+    const progress = Math.min(deltaX / (width * SIDEBAR_SWIPE_RATIO * 2), 1);
+    sidebar.style.transform = `translateX(${-width + (width * progress)}px)`;
     sidebarOverlay.style.display = 'block';
     sidebarOverlay.style.opacity = progress;
     e.preventDefault();
@@ -1173,9 +2177,10 @@ edgeSwipeArea.addEventListener('touchend', () => {
     edgeSwipeActive = false;
     const transform = sidebar.style.transform;
     if (transform) {
+        const width = getSidebarWidth();
         const match = transform.match(/translateX\((.*)px\)/);
-        const currentX = match ? parseFloat(match[1]) : -280;
-        if (currentX > -100) {
+        const currentX = match ? parseFloat(match[1]) : -width;
+        if (currentX > -(width * SIDEBAR_SWIPE_RATIO * 2)) {
             openSidebar();
             sidebarOverlay.style.opacity = '';
         } else {
@@ -1218,10 +2223,10 @@ document.addEventListener('touchmove', (e) => {
     sidebarCloseDistX = touchX - sidebarCloseStartX;
     
     if (sidebarCloseDistX < -5) {
-        const progress = Math.abs(sidebarCloseDistX / 100);
-        const clamped = Math.min(progress, 1);
+        const width = getSidebarWidth();
+        const clamped = Math.min(Math.abs(sidebarCloseDistX / (width * SIDEBAR_SWIPE_RATIO * 2)), 1);
         sidebar.style.transition = 'none';
-        sidebar.style.transform = `translateX(${-clamped * 280}px)`;
+        sidebar.style.transform = `translateX(${-clamped * width}px)`;
         sidebarOverlay.style.opacity = Math.max(0, 1 - clamped);
         e.preventDefault();
     }
@@ -1231,11 +2236,11 @@ document.addEventListener('touchend', () => {
     if (!sidebarCloseActive) return;
     sidebarCloseActive = false;
     sidebar.style.transition = '';
-    if (sidebarCloseDistX < -100) {
+    const width = getSidebarWidth();
+    if (sidebarCloseDistX < -(width * SIDEBAR_SWIPE_RATIO * 2)) {
         closeSidebar();
     } else {
         sidebar.style.transform = '';
         sidebarOverlay.style.opacity = '';
     }
 }, { passive: true });
-
